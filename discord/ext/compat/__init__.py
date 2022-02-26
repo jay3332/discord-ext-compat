@@ -32,8 +32,14 @@ if TYPE_CHECKING:
     MakeshiftMessageT = TypeVar('MakeshiftMessageT', bound='MakeshiftMessage')
 
 __all__ = (
+    'CompatAutoShardedBot',
+    'CompatBot',
+    'CompatBotMixin',
+    'InteractionAwareContext',
+    'MakeshiftMessage',
     'Range',
     'describe',
+    'inject',
     'override_option',
 )
 
