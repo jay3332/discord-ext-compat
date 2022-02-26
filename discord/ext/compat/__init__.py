@@ -43,6 +43,9 @@ __all__ = (
     'override_option',
 )
 
+__author__ = 'jay3332'
+__version__ = '0.1.0'
+
 
 class Injector:
     def __init__(self, bot: BotT, *, tree: ApplicationCommandTree = MISSING) -> None:
@@ -272,15 +275,28 @@ def override_option(
     return decorator
 
 
-def describe(param_name: str, description: str) -> CommandDecorator:
-    """A shortcut for :func:`override_option` which adds a description to an option.
+def describe(**attrs: str) -> CommandDecorator:
+    """A shortcut for :func:`override_option` which adds a description to the provideed options.
 
     This abstraction was made as the commands framework did not provide a programmatic way to add descriptions to options out of the box.
 
     .. note::
         When used as a decorator, decorate this **below** the :func:`@inject <inject>` decorator.
     """
-    return override_option(param_name, description=description)
+    def decorator(func: Union[commands.Command, Callable[..., Any]]) -> Union[commands.Command, Callable[..., Any]]:
+        original = func
+        if isinstance(func, commands.Command):
+            func = func.callback
+
+        if not hasattr(func, '__compat_application_command_options__'):
+            func.__compat_application_command_options__ = defaultdict(lambda: option(description=MISSING))
+
+        for key, description in attrs.items():
+            func.__compat_application_command_options__[key].description = description
+
+        return original
+
+    return decorator
 
 
 def inject(
@@ -332,9 +348,7 @@ def inject(
 
         @bot.command()
         @inject(guild_id=123456789)
-        @describe("a", "The first number")
-        @describe("b", "The second number")
-
+        @describe(a="The first number", b="The second number")
         async def add(ctx: commands.Context, a: int, b: int):
             \"""Adds two numbers together\"""
             await ctx.send(f"{a} + {b} = {a + b}")
@@ -531,7 +545,7 @@ def monkeypatch():
 
     Note that this is not recommended as it is at the end of the day, monkeypatching.
 
-    If you don't exactly know what :link:`monkeypatching is <https://en.wikipedia.org/wiki/Monkey_patch>`, then you probably shouldn't use this module.
+    If you don't exactly know what :link:`monkeypatching is <https://en.wikipedia.org/wiki/Monkey_patch>`, then you probably shouldn't use this function.
     """
     discord.application_commands.Range = Range
     commands.Bot = CompatBot
